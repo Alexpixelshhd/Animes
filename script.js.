@@ -1,139 +1,100 @@
 /**
- * ZENITH ANIME PRO - MOTOR PRINCIPAL ⚙️
+ * ZENITH ANIME PRO - CORE ENGINE ⚙️
+ * Versión Definitiva y Robusta
  */
 
-// --- 1. REFERENCIAS AL HTML ---
-const mainGrid = document.getElementById('main-grid');
-const searchInput = document.getElementById('main-search');
-const sectionTitle = document.getElementById('section-title');
-const filterBtns = document.querySelectorAll('.filter-btn');
-const toast = document.getElementById('toast-notify');
+// 1. CONFIGURACIÓN DE ELEMENTOS
+// Usamos nombres que coincidan exactamente con tu HTML
+const CONFIG = {
+    gridId: 'main-grid',
+    searchId: 'main-search',
+    apiBase: 'https://api.jikan.moe/v4'
+};
 
-// --- 2. CONFIGURACIÓN DE LA API ---
-const API_URL = 'https://api.jikan.moe/v4';
+// 2. INICIO SEGURO
+// Esperamos a que el navegador esté listo para evitar errores de "null"
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("✅ Sistema Zenith iniciado");
+    
+    const grid = document.getElementById(CONFIG.gridId);
+    const search = document.getElementById(CONFIG.searchId);
 
-// --- 3. FUNCIÓN DE CARGA PRINCIPAL ---
-async function fetchAnimeData(endpoint, titleLabel = "Resultados") {
-    // 1. Mostrar estado de carga
-    mainGrid.innerHTML = `
-        <div class="col-span-full text-center py-20 opacity-50">
-            <div class="inline-block animate-spin text-4xl mb-4">⚙️</div>
-            <p class="text-xl font-medium tracking-tight">Sincronizando con la base de datos...</p>
-        </div>
-    `;
-    sectionTitle.innerHTML = `<span class="w-8 h-[2px] bg-blue-500"></span> Mostrando: ${titleLabel}`;
+    if (!grid || !search) {
+        console.error("❌ Error: No se encontraron los elementos en el HTML. Revisa los IDs.");
+        return;
+    }
+
+    // Carga inicial (Top Animes)
+    solicitarAnimes();
+
+    // Configurar Buscador
+    let timer;
+    search.addEventListener('input', (e) => {
+        clearTimeout(timer);
+        const query = e.target.value.trim();
+        
+        timer = setTimeout(() => {
+            if (query.length > 2) {
+                solicitarAnimes(`/anime?q=${query}&limit=20`);
+            } else if (query.length === 0) {
+                solicitarAnimes();
+            }
+        }, 600);
+    });
+});
+
+// 3. FUNCIÓN DE COMUNICACIÓN CON LA API
+async function solicitarAnimes(endpoint = '/top/anime?limit=20') {
+    const grid = document.getElementById(CONFIG.gridId);
+    
+    // Indicador de carga visual
+    grid.innerHTML = '<div class="col-span-full text-center py-20 text-blue-400 animate-pulse">Conectando con la base de datos... 📡</div>';
 
     try {
-        const response = await fetch(`${API_URL}${endpoint}`);
+        console.log(`📡 Solicitando: ${CONFIG.apiBase}${endpoint}`);
+        const response = await fetch(`${CONFIG.apiBase}${endpoint}`);
         
-        // Manejo de errores de red o API
-        if (!response.ok) throw new Error("Error en la respuesta del servidor");
-        
-        const json = await response.json();
-        const animes = json.data;
+        if (!response.ok) throw new Error(`Fallo en la red: ${response.status}`);
 
-        if (!animes || animes.length === 0) {
-            mainGrid.innerHTML = `<p class="col-span-full text-center py-10 text-slate-500 italic text-lg">No encontramos coincidencias para "${titleLabel}"... 🕵️‍♂️</p>`;
-            return;
-        }
+        const result = await response.json();
+        console.log("📦 Datos recibidos:", result.data.length, "animes");
 
-        renderCards(animes);
+        dibujarInterfaz(result.data);
 
     } catch (error) {
-        console.error("❌ Error Crítico:", error);
-        mainGrid.innerHTML = `
+        console.error("❌ Error en la carga:", error);
+        grid.innerHTML = `
             <div class="col-span-full text-center py-20 text-red-500">
-                <p class="text-4xl mb-4">🔌</p>
-                <p class="font-bold">Error de conexión</p>
-                <p class="text-sm opacity-70">La API de Jikan está saturada o no tienes internet. Reintenta en unos segundos.</p>
-                <button onclick="location.reload()" class="mt-4 bg-slate-800 px-4 py-2 rounded-lg text-white">Reintentar</button>
-            </div>
-        `;
+                <p class="text-2xl mb-2">🔌 Error de Conexión</p>
+                <p class="text-sm opacity-70">${error.message}</p>
+            </div>`;
     }
 }
 
-// --- 4. FUNCIÓN PARA DIBUJAR LAS TARJETAS ---
-function renderCards(listaAnimes) {
-    mainGrid.innerHTML = ''; // Limpiamos el grid
+// 4. FUNCIÓN PARA PINTAR LAS TARJETAS
+function dibujarInterfaz(animes) {
+    const grid = document.getElementById(CONFIG.gridId);
+    grid.innerHTML = ''; // Limpiar cargador
 
-    listaAnimes.forEach(anime => {
-        // Creamos la estructura de la tarjeta
+    if (animes.length === 0) {
+        grid.innerHTML = '<p class="col-span-full text-center text-gray-500">No se encontraron resultados 🕵️‍♂️</p>';
+        return;
+    }
+
+    animes.forEach(anime => {
         const card = document.createElement('div');
-        card.className = "anime-card bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-lg group relative";
+        card.className = "bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-lg hover:border-blue-500 transition-all duration-300 p-2";
         
         card.innerHTML = `
-            <div class="relative h-72 overflow-hidden">
-                <img src="${anime.images.jpg.large_image_url}" alt="${anime.title}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60"></div>
-                
-                <div class="absolute top-4 left-4 bg-blue-600/90 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] font-black shadow-lg">
-                    ⭐ ${anime.score || 'N/A'}
+            <img src="${anime.images.jpg.large_image_url}" class="w-full h-56 object-cover rounded-xl mb-3" alt="${anime.title}">
+            <div class="p-2">
+                <h3 class="font-bold text-sm truncate text-white mb-1">${anime.title}</h3>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="text-[10px] bg-blue-600 px-2 py-0.5 rounded text-white font-black">⭐ ${anime.score || 'N/A'}</span>
+                    <a href="${anime.url}" target="_blank" class="text-[10px] text-blue-400 hover:underline font-bold">VER MÁS</a>
                 </div>
-
-                <button onclick="addToFavorites(${anime.mal_id})" class="absolute top-4 right-4 bg-slate-900/60 backdrop-blur-md p-2 rounded-full hover:bg-yellow-500 transition-colors shadow-lg">
-                    ⭐
-                </button>
-            </div>
-
-            <div class="p-5">
-                <h3 class="font-black text-sm mb-2 line-clamp-1 group-hover:text-blue-400 transition-colors">${anime.title}</h3>
-                <div class="flex items-center gap-2 mb-4 text-[10px] text-slate-500 font-bold">
-                    <span>${anime.type || 'TV'}</span>
-                    <span class="w-1 h-1 bg-slate-700 rounded-full"></span>
-                    <span>${anime.episodes || '?'} EPS</span>
-                </div>
-                <a href="${anime.url}" target="_blank" class="block w-full text-center bg-slate-800 hover:bg-blue-600 py-3 rounded-2xl text-[10px] font-black tracking-widest transition-all">
-                    VER FICHA
-                </a>
             </div>
         `;
-        mainGrid.appendChild(card);
+        grid.appendChild(card);
     });
 }
-
-// --- 5. LÓGICA DE EVENTOS (BUSCADOR Y FILTROS) ---
-
-// Buscador con retraso (Debounce) para no bloquear la API
-let typingTimer;
-searchInput.addEventListener('input', (e) => {
-    clearTimeout(typingTimer);
-    const query = e.target.value.trim();
-
-    typingTimer = setTimeout(() => {
-        if (query.length >= 3) {
-            fetchAnimeData(`/anime?q=${query}&limit=20`, `Búsqueda: ${query}`);
-        } else if (query.length === 0) {
-            fetchAnimeData('/top/anime?limit=20', "Populares");
-        }
-    }, 700);
-});
-
-// Filtros de género
-filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        // Actualizar UI de botones
-        filterBtns.forEach(b => b.className = "filter-btn bg-slate-900 hover:bg-slate-800 border border-slate-800 px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors");
-        btn.className = "filter-btn bg-blue-600 text-white px-6 py-2 rounded-full text-xs font-bold shadow-lg shadow-blue-900/30 whitespace-nowrap";
-
-        const genreId = btn.getAttribute('data-genre');
-        const genreName = btn.innerText;
-
-        if (genreId) {
-            fetchAnimeData(`/anime?genres=${genreId}&order_by=score&sort=desc&limit=20`, genreName);
-        } else {
-            fetchAnimeData('/top/anime?limit=20', "Populares");
-        }
-    });
-});
-
-// Función simple de Favoritos (Lógica de almacenamiento próximamente)
-window.addToFavorites = (id) => {
-    toast.className = "fixed bottom-8 right-8 translate-y-0 opacity-100 transition-all duration-500 bg-blue-600 text-white px-6 py-3 rounded-2xl shadow-2xl z-[100] font-bold text-sm";
-    setTimeout(() => {
-        toast.className = "fixed bottom-8 right-8 translate-y-24 opacity-0 transition-all duration-500 bg-blue-600 text-white px-6 py-3 rounded-2xl shadow-2xl z-[100] font-bold text-sm pointer-events-none";
-    }, 2000);
-    console.log("ID guardado:", id);
-};
-
-// --- 6. ARRANQUE INICIAL ---
-fetchAnimeData('/top/anime?limit=20', "Populares");
