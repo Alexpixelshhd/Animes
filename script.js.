@@ -1,66 +1,117 @@
-<script>
-    // 1. Conexión con los elementos del HTML
-    const gridAnimes = document.getElementById('grid-animes');
-    const buscador = document.getElementById('buscador-principal');
+/**
+ * ZENITH ANIME PRO - CORE ENGINE ⚙️
+ * Maneja: API, Búsqueda, Filtros y Favoritos
+ */
 
-    // 2. Función maestra para obtener datos de la API (Jikan v4)
-    async function obtenerDatos(termino = '') {
-        // Si hay texto busca por nombre, si no, trae el Top de la temporada
-        const url = termino 
-            ? `https://api.jikan.moe/v4/anime?q=${termino}&limit=12` 
-            : `https://api.jikan.moe/v4/top/anime?limit=12`;
+// --- 1. CONFIGURACIÓN Y ESTADO ---
+const API_BASE = 'https://api.jikan.moe/v4';
+const grid = document.getElementById('main-grid');
+const searchInput = document.getElementById('main-search');
 
-        try {
-            const respuesta = await fetch(url);
-            const resultado = await respuesta.json();
-            dibujarPantalla(resultado.data);
-        } catch (error) {
-            console.error("Error de conexión:", error);
-            gridAnimes.innerHTML = '<p class="col-span-full text-center text-red-500">Hubo un error al conectar con la base de datos. 🔌</p>';
-        }
+// Estado de la aplicación
+let estadoApp = {
+    view: 'top',      // 'top', 'search', 'genre', 'favorites'
+    query: '',
+    genreId: '',
+    favoritos: JSON.parse(localStorage.getItem('zenith_favs')) || []
+};
+
+// --- 2. MOTOR DE DATOS (API) ---
+async function fetchAnimes() {
+    grid.innerHTML = generarEsqueleto(); // Animación de carga
+    
+    let url = `${API_BASE}/top/anime?limit=15`; // Por defecto
+
+    if (estadoApp.view === 'search') {
+        url = `${API_BASE}/anime?q=${estadoApp.query}&order_by=score&sort=desc`;
+    } else if (estadoApp.view === 'genre') {
+        url = `${API_BASE}/anime?genres=${estadoApp.genreId}&order_by=score&sort=desc`;
     }
 
-    // 3. Función para "pintar" las tarjetas de anime
-    function dibujarPantalla(lista) {
-        gridAnimes.innerHTML = ''; // Limpiamos el mensaje de "Cargando"
+    try {
+        const response = await fetch(url);
+        const json = await response.json();
+        renderCards(json.data);
+    } catch (error) {
+        console.error("Error:", error);
+        grid.innerHTML = `<p class="col-span-full text-center text-red-500">Error de red. Verifica tu conexión. 🔌</p>`;
+    }
+}
 
-        if (!lista || lista.length === 0) {
-            gridAnimes.innerHTML = '<p class="col-span-full text-center">No encontramos nada con ese nombre. 🧐</p>';
-            return;
-        }
+// --- 3. RENDERIZADO DE INTERFAZ ---
+function renderCards(animes) {
+    grid.innerHTML = '';
+    
+    if (!animes || animes.length === 0) {
+        grid.innerHTML = `<p class="col-span-full text-center py-10 text-gray-400">No se encontraron resultados... 🕵️‍♂️</p>`;
+        return;
+    }
 
-        lista.forEach(anime => {
-            const tarjeta = `
-                <div class="anime-card bg-[#1c2333] rounded-2xl overflow-hidden border border-gray-800 shadow-lg transition-all duration-300">
-                    <img src="${anime.images.jpg.large_image_url}" class="w-full h-64 object-cover" alt="${anime.title}">
-                    <div class="p-5">
-                        <h3 class="font-bold text-lg mb-2 truncate text-blue-400">${anime.title}</h3>
-                        <p class="text-xs text-gray-400 line-clamp-3 mb-4">${anime.synopsis || 'Sin descripción disponible.'}</p>
-                        <a href="${anime.url}" target="_blank" class="block w-full text-center bg-blue-600 hover:bg-blue-500 py-2 rounded-xl font-bold text-sm transition-colors shadow-lg">
-                            VER FICHA
-                        </a>
-                    </div>
+    animes.forEach(anime => {
+        const isFav = estadoApp.favoritos.some(f => f.mal_id === anime.mal_id);
+        
+        const card = document.createElement('div');
+        card.className = "anime-card bg-[#161b2c] rounded-2xl overflow-hidden border border-gray-800 shadow-lg group";
+        card.innerHTML = `
+            <div class="relative h-72 overflow-hidden">
+                <img src="${anime.images.jpg.large_image_url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                <div class="absolute top-2 right-2">
+                    <button onclick="toggleFav(${anime.mal_id})" class="p-2 rounded-full ${isFav ? 'bg-yellow-500' : 'bg-black/50'} backdrop-blur-md">
+                        ${isFav ? '⭐' : '☆'}
+                    </button>
                 </div>
-            `;
-            gridAnimes.innerHTML += tarjeta;
-        });
-    }
-
-    // 4. Lógica del buscador con retraso (Debounce)
-    let temporizador;
-    buscador.addEventListener('input', (e) => {
-        clearTimeout(temporizador);
-        const texto = e.target.value.trim();
-
-        temporizador = setTimeout(() => {
-            if (texto.length > 2) {
-                obtenerDatos(texto);
-            } else if (texto.length === 0) {
-                obtenerDatos(); // Si borra todo, vuelve al Top
-            }
-        }, 500); // Espera 500ms para no saturar la API
+                <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0b0f1a] to-transparent">
+                    <span class="text-xs font-bold bg-blue-600 px-2 py-0.5 rounded">⭐ ${anime.score || 'N/A'}</span>
+                </div>
+            </div>
+            <div class="p-4">
+                <h3 class="font-bold text-sm mb-2 line-clamp-1">${anime.title}</h3>
+                <p class="text-[10px] text-gray-400 line-clamp-2 mb-4">${anime.synopsis || 'Sin descripción.'}</p>
+                <div class="flex gap-2">
+                    <a href="${anime.url}" target="_blank" class="flex-1 text-center bg-gray-800 hover:bg-blue-600 py-2 rounded-lg text-[10px] font-bold transition-all">DETALLES</a>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
     });
+}
 
-    // 5. Carga inicial al abrir la página
-    obtenerDatos();
-</script>
+// --- 4. LÓGICA DE FAVORITOS (localStorage) ---
+window.toggleFav = function(id) {
+    // Aquí implementaremos la lógica para guardar en el navegador
+    console.log("Cambiando favorito:", id);
+};
+
+// --- 5. EVENTOS ---
+let debounceTimer;
+searchInput.addEventListener('input', (e) => {
+    clearTimeout(debounceTimer);
+    const val = e.target.value.trim();
+    
+    debounceTimer = setTimeout(() => {
+        if (val.length > 2) {
+            estadoApp.view = 'search';
+            estadoApp.query = val;
+        } else {
+            estadoApp.view = 'top';
+        }
+        fetchAnimes();
+    }, 600);
+});
+
+// Función para los botones de género
+window.filtrarGen = function(id) {
+    estadoApp.view = id ? 'genre' : 'top';
+    estadoApp.genreId = id;
+    fetchAnimes();
+};
+
+// Auxiliar: Animación de carga
+function generarEsqueleto() {
+    return Array(10).fill(0).map(() => `
+        <div class="h-80 bg-gray-800/20 rounded-2xl animate-pulse"></div>
+    `).join('');
+}
+
+// Iniciar app
+fetchAnimes();
