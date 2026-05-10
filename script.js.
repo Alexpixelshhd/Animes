@@ -1,117 +1,92 @@
 /**
  * ZENITH ANIME PRO - CORE ENGINE ⚙️
- * Maneja: API, Búsqueda, Filtros y Favoritos
+ * Este script maneja la lógica de búsqueda, filtros y renderizado.
  */
 
-// --- 1. CONFIGURACIÓN Y ESTADO ---
+// --- 1. CONFIGURACIÓN INICIAL ---
 const API_BASE = 'https://api.jikan.moe/v4';
 const grid = document.getElementById('main-grid');
 const searchInput = document.getElementById('main-search');
-
-// Estado de la aplicación
-let estadoApp = {
-    view: 'top',      // 'top', 'search', 'genre', 'favorites'
-    query: '',
-    genreId: '',
-    favoritos: JSON.parse(localStorage.getItem('zenith_favs')) || []
-};
+const filterBtns = document.querySelectorAll('.filter-btn');
 
 // --- 2. MOTOR DE DATOS (API) ---
-async function fetchAnimes() {
-    grid.innerHTML = generarEsqueleto(); // Animación de carga
-    
-    let url = `${API_BASE}/top/anime?limit=15`; // Por defecto
-
-    if (estadoApp.view === 'search') {
-        url = `${API_BASE}/anime?q=${estadoApp.query}&order_by=score&sort=desc`;
-    } else if (estadoApp.view === 'genre') {
-        url = `${API_BASE}/anime?genres=${estadoApp.genreId}&order_by=score&sort=desc`;
-    }
+async function cargarAnimes(endpoint = '/top/anime?limit=15') {
+    // Mostramos un efecto de carga básico
+    grid.innerHTML = '<p class="col-span-full text-center animate-pulse">Buscando en la base de datos... 🚀</p>';
 
     try {
-        const response = await fetch(url);
-        const json = await response.json();
-        renderCards(json.data);
+        const response = await fetch(`${API_BASE}${endpoint}`);
+        const data = await response.json();
+        
+        if (data.data) {
+            renderizarTarjetas(data.data);
+        } else {
+            grid.innerHTML = '<p class="col-span-full text-center">No se encontraron resultados. 🕵️‍♂️</p>';
+        }
     } catch (error) {
-        console.error("Error:", error);
-        grid.innerHTML = `<p class="col-span-full text-center text-red-500">Error de red. Verifica tu conexión. 🔌</p>`;
+        console.error("Error de conexión:", error);
+        grid.innerHTML = '<p class="col-span-full text-center text-red-500">Error al conectar con el servidor. 🔌</p>';
     }
 }
 
 // --- 3. RENDERIZADO DE INTERFAZ ---
-function renderCards(animes) {
-    grid.innerHTML = '';
-    
-    if (!animes || animes.length === 0) {
-        grid.innerHTML = `<p class="col-span-full text-center py-10 text-gray-400">No se encontraron resultados... 🕵️‍♂️</p>`;
-        return;
-    }
+function renderizarTarjetas(animes) {
+    grid.innerHTML = ''; // Limpiar el contenedor
 
     animes.forEach(anime => {
-        const isFav = estadoApp.favoritos.some(f => f.mal_id === anime.mal_id);
-        
-        const card = document.createElement('div');
-        card.className = "anime-card bg-[#161b2c] rounded-2xl overflow-hidden border border-gray-800 shadow-lg group";
-        card.innerHTML = `
-            <div class="relative h-72 overflow-hidden">
-                <img src="${anime.images.jpg.large_image_url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                <div class="absolute top-2 right-2">
-                    <button onclick="toggleFav(${anime.mal_id})" class="p-2 rounded-full ${isFav ? 'bg-yellow-500' : 'bg-black/50'} backdrop-blur-md">
-                        ${isFav ? '⭐' : '☆'}
-                    </button>
+        const card = `
+            <div class="anime-card bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-lg group">
+                <div class="relative h-64 overflow-hidden">
+                    <img src="${anime.images.jpg.large_image_url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-950 to-transparent">
+                        <span class="text-xs font-bold bg-blue-600 px-2 py-1 rounded">⭐ ${anime.score || 'N/A'}</span>
+                    </div>
                 </div>
-                <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0b0f1a] to-transparent">
-                    <span class="text-xs font-bold bg-blue-600 px-2 py-0.5 rounded">⭐ ${anime.score || 'N/A'}</span>
-                </div>
-            </div>
-            <div class="p-4">
-                <h3 class="font-bold text-sm mb-2 line-clamp-1">${anime.title}</h3>
-                <p class="text-[10px] text-gray-400 line-clamp-2 mb-4">${anime.synopsis || 'Sin descripción.'}</p>
-                <div class="flex gap-2">
-                    <a href="${anime.url}" target="_blank" class="flex-1 text-center bg-gray-800 hover:bg-blue-600 py-2 rounded-lg text-[10px] font-bold transition-all">DETALLES</a>
+                <div class="p-4">
+                    <h3 class="font-bold text-sm mb-2 line-clamp-1 text-blue-400">${anime.title}</h3>
+                    <p class="text-[10px] text-slate-400 line-clamp-2 mb-4">${anime.synopsis || 'Sin descripción disponible.'}</p>
+                    <a href="${anime.url}" target="_blank" class="block w-full text-center bg-slate-800 hover:bg-blue-600 py-2 rounded-lg text-[10px] font-bold transition-colors">
+                        MÁS DETALLES
+                    </a>
                 </div>
             </div>
         `;
-        grid.appendChild(card);
+        grid.innerHTML += card;
     });
 }
 
-// --- 4. LÓGICA DE FAVORITOS (localStorage) ---
-window.toggleFav = function(id) {
-    // Aquí implementaremos la lógica para guardar en el navegador
-    console.log("Cambiando favorito:", id);
-};
+// --- 4. CONTROLADORES DE EVENTOS ---
 
-// --- 5. EVENTOS ---
-let debounceTimer;
+// Lógica de Búsqueda (con retraso para no saturar la API)
+let tiempoEspera;
 searchInput.addEventListener('input', (e) => {
-    clearTimeout(debounceTimer);
-    const val = e.target.value.trim();
-    
-    debounceTimer = setTimeout(() => {
-        if (val.length > 2) {
-            estadoApp.view = 'search';
-            estadoApp.query = val;
-        } else {
-            estadoApp.view = 'top';
+    clearTimeout(tiempoEspera);
+    const query = e.target.value.trim();
+
+    tiempoEspera = setTimeout(() => {
+        if (query.length > 2) {
+            cargarAnimes(`/anime?q=${query}&limit=15`);
+        } else if (query.length === 0) {
+            cargarAnimes(); // Volver al Top
         }
-        fetchAnimes();
     }, 600);
 });
 
-// Función para los botones de género
-window.filtrarGen = function(id) {
-    estadoApp.view = id ? 'genre' : 'top';
-    estadoApp.genreId = id;
-    fetchAnimes();
-};
+// Lógica de Filtros por Género
+filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Estética: Cambiar botón activo
+        filterBtns.forEach(b => b.classList.remove('bg-blue-600', 'shadow-lg'));
+        btn.classList.add('bg-blue-600', 'shadow-lg');
 
-// Auxiliar: Animación de carga
-function generarEsqueleto() {
-    return Array(10).fill(0).map(() => `
-        <div class="h-80 bg-gray-800/20 rounded-2xl animate-pulse"></div>
-    `).join('');
-}
+        const genreId = btn.getAttribute('data-genre');
+        if (genreId) {
+            cargarAnimes(`/anime?genres=${genreId}&limit=15&order_by=score&sort=desc`);
+        } else {
+            cargarAnimes(); // Top / Tendencias
+        }
+    });
+});
 
-// Iniciar app
-fetchAnimes();
+// --- 5. INICIO ---
+cargarAnimes();
