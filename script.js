@@ -1,59 +1,87 @@
-const catalogo = document.getElementById('catalogo');
-const inputBuscador = document.getElementById('buscador');
+/**
+ * ZENITH STREAM - MOTOR DE BÚSQUEDA 🚀
+ */
 
-// Función para transformar el título en un slug (enlace directo)
-function crearSlug(titulo) {
-    return titulo
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, '') // Quita símbolos
-        .replace(/\s+/g, '-');       // Espacios por guiones
-}
+const CONFIG = {
+    API_URL: 'https://api.jikan.moe/v4',
+    STREAM_BASE: 'https://tioanime.com/directorio?q='
+};
 
-async function cargarAnimes(termino = '') {
-    catalogo.innerHTML = '<p class="col-span-full text-center opacity-50">Cargando...</p>';
-    
-    const url = termino 
-        ? `https://api.jikan.moe/v4/anime?q=${termino}&limit=15`
-        : `https://api.jikan.moe/v4/top/anime?limit=15`;
+// Seleccionamos los elementos del HTML
+const grilla = document.getElementById('catalogo'); // Asegúrate que en HTML sea id="catalogo"
+const buscador = document.getElementById('buscador'); // Asegúrate que en HTML sea id="buscador"
 
+/**
+ * Función principal para obtener datos de la API 📡
+ */
+async function obtenerAnimes(termino = '') {
     try {
-        const res = await fetch(url);
-        const { data } = await res.json();
-        renderizar(data);
-    } catch (e) {
-        catalogo.innerHTML = '<p>Error al conectar con la API 🔌</p>';
+        // Mensaje de carga
+        grilla.innerHTML = '<p class="col-span-full text-center text-blue-400 animate-pulse">Buscando señales en el espacio... 🚀</p>';
+        
+        // Si hay término busca, si no, trae los populares
+        const endpoint = termino 
+            ? `${CONFIG.API_URL}/anime?q=${encodeURIComponent(termino)}&limit=15`
+            : `${CONFIG.API_URL}/top/anime?limit=15`;
+
+        const respuesta = await fetch(endpoint);
+        const { data } = await respuesta.json();
+        
+        mostrarAnimes(data);
+    } catch (error) {
+        console.error("Error técnico:", error);
+        grilla.innerHTML = '<p class="col-span-full text-center text-red-500 font-bold">Error de conexión 🔌. Revisa tu internet.</p>';
     }
 }
 
-function renderizar(animes) {
-    catalogo.innerHTML = '';
-    animes.forEach(anime => {
-        // Opción 1: Intentar enlace directo (Slug)
-        const slug = crearSlug(anime.title);
-        const linkDirecto = `https://tioanime.com/anime/${slug}`;
+/**
+ * Función para crear las tarjetas en pantalla 🖼️
+ */
+function mostrarAnimes(lista) {
+    grilla.innerHTML = '';
+    
+    if (!lista || lista.length === 0) {
+        grilla.innerHTML = '<p class="col-span-full text-center opacity-50 text-white">No encontramos ese anime 🕵️‍♂️</p>';
+        return;
+    }
 
-        catalogo.innerHTML += `
-            <div class="anime-card bg-slate-900 rounded-2xl overflow-hidden shadow-2xl transition-all border border-slate-800">
-                <div class="h-64 overflow-hidden relative">
-                    <img src="${anime.images.jpg.large_image_url}" class="w-full h-full object-cover transition-transform duration-500">
-                </div>
-                <div class="p-4 text-center">
-                    <h3 class="text-sm font-bold truncate mb-3">${anime.title}</h3>
-                    <a href="${linkDirecto}" target="_blank" 
-                       class="inline-block w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black py-2 rounded-lg transition-colors">
-                       VER AHORA 📺
-                    </a>
+    lista.forEach(anime => {
+        // Construimos el enlace de streaming
+        const enlaceFinal = `${CONFIG.STREAM_BASE}${encodeURIComponent(anime.title)}`;
+
+        // Creamos el elemento de la tarjeta
+        const tarjeta = document.createElement('div');
+        tarjeta.className = "bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-800 hover:border-blue-500 transition-all group";
+        
+        tarjeta.innerHTML = `
+            <div class="relative h-64 overflow-hidden">
+                <img src="${anime.images.jpg.large_image_url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                <div class="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded text-xs font-bold text-yellow-400">
+                    ⭐ ${anime.score || 'N/A'}
                 </div>
             </div>
+            <div class="p-4 text-center">
+                <h3 class="text-sm font-bold truncate text-white mb-4">${anime.title}</h3>
+                <a href="${enlaceFinal}" target="_blank" 
+                   class="inline-block w-full bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-black py-2.5 rounded-xl transition-colors uppercase tracking-widest">
+                   Reproducir Ahora 📺
+                </a>
+            </div>
         `;
+        grilla.appendChild(tarjeta);
     });
 }
 
-// Buscador con retraso
-let timer;
-inputBuscador.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => cargarAnimes(inputBuscador.value), 500);
+/**
+ * Control del Buscador 🔍
+ */
+let tiempoEspera;
+buscador.addEventListener('input', (e) => {
+    clearTimeout(tiempoEspera);
+    tiempoEspera = setTimeout(() => {
+        obtenerAnimes(e.target.value);
+    }, 500); // Espera medio segundo antes de buscar
 });
 
-cargarAnimes();
+// EXTREMADAMENTE IMPORTANTE: Esta línea arranca todo al cargar la página
+obtenerAnimes();
