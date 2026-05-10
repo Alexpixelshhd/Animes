@@ -3,16 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith Stream Direct 📺</title>
+    <title>Zenith Stream | Panel de Control 🚀</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-white min-h-screen p-6">
+<body class="bg-slate-950 text-white min-h-screen p-4 md:p-8">
 
-    <header class="max-w-5xl mx-auto text-center mb-10">
-        <h1 class="text-4xl font-black text-blue-500 mb-6 italic uppercase">Zenith Stream</h1>
-        <input type="text" id="buscador" placeholder="Busca un anime para ir directo..." 
-               class="w-full max-w-xl p-4 rounded-xl bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none transition-all">
+    <header class="max-w-6xl mx-auto text-center mb-10">
+        <h1 class="text-4xl font-black text-blue-500 uppercase italic">Zenith Stream</h1>
+        <input type="text" id="buscador" placeholder="Buscar en la base de datos..." 
+               class="w-full max-w-md mt-6 p-3 rounded-xl bg-slate-900 border border-slate-800 focus:border-blue-500 outline-none transition-all">
     </header>
+
+    <section id="seccion-reproductor" class="max-w-4xl mx-auto mb-12 hidden">
+        <div class="bg-black aspect-video rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+            <iframe id="video-player" src="" class="w-full h-full" allowfullscreen></iframe>
+        </div>
+        <div id="lista-servidores" class="flex flex-wrap justify-center gap-2 mt-4">
+            </div>
+    </section>
 
     <main id="catalogo" class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
         </main>
