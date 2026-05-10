@@ -3,30 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenithAnime | Tu Portal Pro</title>
+    <title>Zenith Anime 🌌</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .anime-card:hover { transform: translateY(-5px); border-color: #3b82f6; }
+    </style>
 </head>
 <body class="bg-[#0b0f1a] text-white min-h-screen">
 
-    <nav class="p-6 border-b border-gray-800 bg-[#161b2c]">
+    <nav class="bg-[#161b2c] p-6 border-b border-gray-800 sticky top-0 z-50 shadow-2xl">
         <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <h1 class="text-3xl font-black text-blue-500 tracking-tighter">ZENITH ANIME 🌌</h1>
             
-            <input 
-                type="text" 
-                id="search-box" 
-                placeholder="Busca tu anime..." 
-                class="w-full md:w-80 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-            >
+            <div class="relative w-full md:w-96">
+                <input 
+                    type="text" 
+                    id="buscador-principal" 
+                    placeholder="Busca un anime..." 
+                    class="w-full bg-gray-900 border border-gray-700 rounded-full py-2 px-10 focus:ring-2 focus:ring-blue-500 outline-none text-white transition-all"
+                >
+                <span class="absolute left-3 top-2.5 opacity-50 text-white">🔍</span>
+            </div>
         </div>
     </nav>
 
     <main class="container mx-auto mt-10 p-4">
-        <div id="results-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <p class="col-span-full text-center text-gray-500">Cargando sistema...</p>
+        <div id="grid-animes" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            <div class="col-span-full text-center py-20">
+                <p class="text-xl text-gray-500 animate-pulse font-mono">Iniciando motor de búsqueda... ⚙️</p>
+            </div>
         </div>
     </main>
 
-    <script src="script.js"></script>
+    <script>
+        const grid = document.getElementById('grid-animes');
+        const input = document.getElementById('buscador-principal');
+
+        // Función para conectar con la API
+        async function cargarDatos(query = '') {
+            // Si hay texto busca, si no, muestra el TOP
+            const url = query 
+                ? `https://api.jikan.moe/v4/anime?q=${query}&limit=12` 
+                : `https://api.jikan.moe/v4/top/anime?limit=12`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                renderizar(data.data);
+            } catch (error) {
+                grid.innerHTML = '<p class="col-span-full text-center text-red-500">Error de conexión. ❌</p>';
+            }
+        }
+
+        // Función para dibujar las tarjetas
+        function renderizar(lista) {
+            grid.innerHTML = ''; // Limpiar mensaje de carga
+
+            if (!lista || lista.length === 0) {
+                grid.innerHTML = '<p class="col-span-full text-center">No hay resultados. 🧐</p>';
+                return;
+            }
+
+            lista.forEach(anime => {
+                grid.innerHTML += `
+                    <div class="anime-card bg-[#1c2333] rounded-2xl overflow-hidden border border-gray-800 transition-all duration-300 shadow-lg">
+                        <img src="${anime.images.jpg.large_image_url}" class="w-full h-64 object-cover">
+                        <div class="p-5">
+                            <h3 class="font-bold text-lg mb-2 truncate text-blue-400">${anime.title}</h3>
+                            <p class="text-xs text-gray-400 line-clamp-3 mb-4">${anime.synopsis || 'Sin descripción.'}</p>
+                            <a href="${anime.url}" target="_blank" class="block w-full text-center bg-blue-600 hover:bg-blue-500 py-2 rounded-xl font-bold text-sm transition-colors">Ver Ficha</a>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Escuchar cuando el usuario escribe
+        let timer;
+        input.addEventListener('input', (e) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                if (e.target.value.length > 2) cargarDatos(e.target.value);
+                else if (e.target.value.length === 0) cargarDatos();
+            }, 500);
+        });
+
+        // Carga inicial
+        cargarDatos();
+    </script>
 </body>
 </html>
