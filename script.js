@@ -7,19 +7,19 @@ const CONFIG = {
     STREAM_BASE: 'https://tioanime.com/directorio?q='
 };
 
-// Seleccionamos los elementos del HTML
-const grilla = document.getElementById('catalogo'); // Asegúrate que en HTML sea id="catalogo"
-const buscador = document.getElementById('buscador'); // Asegúrate que en HTML sea id="buscador"
+// --- NUEVA VARIABLE: Nuestra "memoria local" ---
+let listaAnimesLocal = []; 
+
+const grilla = document.getElementById('catalogo'); 
+const buscador = document.getElementById('buscador'); 
 
 /**
  * Función principal para obtener datos de la API 📡
  */
 async function obtenerAnimes(termino = '') {
     try {
-        // Mensaje de carga
         grilla.innerHTML = '<p class="col-span-full text-center text-blue-400 animate-pulse">Buscando señales en el espacio... 🚀</p>';
         
-        // Si hay término busca, si no, trae los populares
         const endpoint = termino 
             ? `${CONFIG.API_URL}/anime?q=${encodeURIComponent(termino)}&limit=15`
             : `${CONFIG.API_URL}/top/anime?limit=15`;
@@ -27,10 +27,14 @@ async function obtenerAnimes(termino = '') {
         const respuesta = await fetch(endpoint);
         const { data } = await respuesta.json();
         
+        // --- GUARDADO DE DATOS: Aquí guardamos la copia antes de dibujar ---
+        listaAnimesLocal = data; 
+        console.log("Datos guardados en memoria local 📦:", listaAnimesLocal);
+
         mostrarAnimes(data);
     } catch (error) {
         console.error("Error técnico:", error);
-        grilla.innerHTML = '<p class="col-span-full text-center text-red-500 font-bold">Error de conexión 🔌. Revisa tu internet.</p>';
+        grilla.innerHTML = '<p class="col-span-full text-center text-red-500 font-bold">Error de conexión 🔌</p>';
     }
 }
 
@@ -46,10 +50,8 @@ function mostrarAnimes(lista) {
     }
 
     lista.forEach(anime => {
-        // Construimos el enlace de streaming
         const enlaceFinal = `${CONFIG.STREAM_BASE}${encodeURIComponent(anime.title)}`;
 
-        // Creamos el elemento de la tarjeta
         const tarjeta = document.createElement('div');
         tarjeta.className = "bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-800 hover:border-blue-500 transition-all group";
         
@@ -80,8 +82,7 @@ buscador.addEventListener('input', (e) => {
     clearTimeout(tiempoEspera);
     tiempoEspera = setTimeout(() => {
         obtenerAnimes(e.target.value);
-    }, 500); // Espera medio segundo antes de buscar
+    }, 500);
 });
 
-// EXTREMADAMENTE IMPORTANTE: Esta línea arranca todo al cargar la página
 obtenerAnimes();
