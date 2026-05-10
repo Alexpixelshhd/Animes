@@ -1,25 +1,32 @@
-<nav class="glass border-b border-gray-800 sticky top-0 z-50 p-4">
-    <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 class="text-2xl font-extrabold tracking-tighter bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
-            ZENITH ANIME 🌌
-        </h1>
-        
-        <div class="relative w-full md:w-96">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenithAnime | Tu Portal Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0b0f1a] text-white min-h-screen">
+
+    <nav class="p-6 border-b border-gray-800 bg-[#161b2c]">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-3xl font-black text-blue-500 tracking-tighter">ZENITH ANIME 🌌</h1>
+            
             <input 
                 type="text" 
-                id="search-input" 
-                placeholder="Escribe el nombre de un anime..." 
-                class="w-full bg-[#1c2333] border border-gray-700 rounded-full py-2 px-10 focus:ring-2 focus:ring-blue-500 outline-none text-white transition-all"
+                id="search-box" 
+                placeholder="Busca tu anime..." 
+                class="w-full md:w-80 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
             >
-            <span class="absolute left-3 top-2.5 opacity-50 text-white">🔍</span>
         </div>
-    </div>
-</nav>
+    </nav>
 
-<main class="container mx-auto mt-16 px-4 mb-24">
-    <div id="anime-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 text-white">
-        <p class="col-span-full text-center">Iniciando sistema...</p>
-    </div>
-</main>
+    <main class="container mx-auto mt-10 p-4">
+        <div id="results-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <p class="col-span-full text-center text-gray-500">Cargando sistema...</p>
+        </div>
+    </main>
 
-<script src="script.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
