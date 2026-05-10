@@ -1,66 +1,59 @@
-const API_URL = 'https://api.jikan.moe/v4';
-const grilla = document.getElementById('grilla-animes');
-const buscador = document.getElementById('input-busqueda');
+const catalogo = document.getElementById('catalogo');
+const inputBuscador = document.getElementById('buscador');
 
-// Función para obtener datos
-async function buscarAnimes(query = '') {
+// Función para transformar el título en un slug (enlace directo)
+function crearSlug(titulo) {
+    return titulo
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '') // Quita símbolos
+        .replace(/\s+/g, '-');       // Espacios por guiones
+}
+
+async function cargarAnimes(termino = '') {
+    catalogo.innerHTML = '<p class="col-span-full text-center opacity-50">Cargando...</p>';
+    
+    const url = termino 
+        ? `https://api.jikan.moe/v4/anime?q=${termino}&limit=15`
+        : `https://api.jikan.moe/v4/top/anime?limit=15`;
+
     try {
-        grilla.innerHTML = '<p class="col-span-full text-center text-slate-500">Buscando en la base de datos... 📡</p>';
-        
-        const endpoint = query 
-            ? `${API_URL}/anime?q=${encodeURIComponent(query)}&limit=20`
-            : `${API_URL}/top/anime?limit=20`;
-
-        const res = await fetch(endpoint);
+        const res = await fetch(url);
         const { data } = await res.json();
-        
-        dibujarCatalogo(data);
-    } catch (error) {
-        grilla.innerHTML = '<p class="col-span-full text-center text-red-500">Error de conexión 🔌</p>';
+        renderizar(data);
+    } catch (e) {
+        catalogo.innerHTML = '<p>Error al conectar con la API 🔌</p>';
     }
 }
 
-// Función para mostrar los animes
-function dibujarCatalogo(lista) {
-    grilla.innerHTML = '';
-    
-    if (!lista || lista.length === 0) {
-        grilla.innerHTML = '<p class="col-span-full text-center">No se encontraron resultados 🕵️‍♂️</p>';
-        return;
-    }
+function renderizar(animes) {
+    catalogo.innerHTML = '';
+    animes.forEach(anime => {
+        // Opción 1: Intentar enlace directo (Slug)
+        const slug = crearSlug(anime.title);
+        const linkDirecto = `https://tioanime.com/anime/${slug}`;
 
-    lista.forEach(anime => {
-        // Enlace al BUSCADOR de TioAnime 📺
-        const urlStreaming = `https://tioanime.com/browser?q=${encodeURIComponent(anime.title)}`;
-
-        const card = document.createElement('div');
-        card.className = "bg-slate-900 rounded-xl overflow-hidden shadow-xl hover:scale-105 transition-transform group cursor-pointer";
-        
-        card.innerHTML = `
-            <div class="relative h-72">
-                <img src="${anime.images.jpg.large_image_url}" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
-                <span class="absolute bottom-2 left-2 bg-blue-600 text-[10px] font-bold px-2 py-1 rounded">⭐ ${anime.score || 'N/A'}</span>
-            </div>
-            <div class="p-3 text-center">
-                <h3 class="text-sm font-bold truncate mb-3">${anime.title}</h3>
-                <a href="${urlStreaming}" target="_blank" class="block w-full bg-white text-black text-[10px] font-black py-2 rounded-lg hover:bg-blue-500 hover:text-white transition-colors uppercase">
-                    Reproducir 📺
-                </a>
+        catalogo.innerHTML += `
+            <div class="anime-card bg-slate-900 rounded-2xl overflow-hidden shadow-2xl transition-all border border-slate-800">
+                <div class="h-64 overflow-hidden relative">
+                    <img src="${anime.images.jpg.large_image_url}" class="w-full h-full object-cover transition-transform duration-500">
+                </div>
+                <div class="p-4 text-center">
+                    <h3 class="text-sm font-bold truncate mb-3">${anime.title}</h3>
+                    <a href="${linkDirecto}" target="_blank" 
+                       class="inline-block w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black py-2 rounded-lg transition-colors">
+                       VER AHORA 📺
+                    </a>
+                </div>
             </div>
         `;
-        grilla.appendChild(card);
     });
 }
 
-// Escuchador del buscador con "Debounce" (espera a que dejes de escribir)
-let temporizador;
-buscador.addEventListener('input', (e) => {
-    clearTimeout(temporizador);
-    temporizador = setTimeout(() => {
-        buscarAnimes(e.target.value);
-    }, 500);
+// Buscador con retraso
+let timer;
+inputBuscador.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => cargarAnimes(inputBuscador.value), 500);
 });
 
-// Carga inicial (Top Animes)
-buscarAnimes();
+cargarAnimes();
