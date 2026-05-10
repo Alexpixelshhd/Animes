@@ -1,100 +1,66 @@
-/**
- * ZENITH ANIME PRO - CORE ENGINE ⚙️
- * Versión Definitiva y Robusta
- */
+<script>
+    // 1. Conexión con los elementos del HTML
+    const gridAnimes = document.getElementById('grid-animes');
+    const buscador = document.getElementById('buscador-principal');
 
-// 1. CONFIGURACIÓN DE ELEMENTOS
-// Usamos nombres que coincidan exactamente con tu HTML
-const CONFIG = {
-    gridId: 'main-grid',
-    searchId: 'main-search',
-    apiBase: 'https://api.jikan.moe/v4'
-};
+    // 2. Función maestra para obtener datos de la API (Jikan v4)
+    async function obtenerDatos(termino = '') {
+        // Si hay texto busca por nombre, si no, trae el Top de la temporada
+        const url = termino 
+            ? `https://api.jikan.moe/v4/anime?q=${termino}&limit=12` 
+            : `https://api.jikan.moe/v4/top/anime?limit=12`;
 
-// 2. INICIO SEGURO
-// Esperamos a que el navegador esté listo para evitar errores de "null"
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("✅ Sistema Zenith iniciado");
-    
-    const grid = document.getElementById(CONFIG.gridId);
-    const search = document.getElementById(CONFIG.searchId);
-
-    if (!grid || !search) {
-        console.error("❌ Error: No se encontraron los elementos en el HTML. Revisa los IDs.");
-        return;
+        try {
+            const respuesta = await fetch(url);
+            const resultado = await respuesta.json();
+            dibujarPantalla(resultado.data);
+        } catch (error) {
+            console.error("Error de conexión:", error);
+            gridAnimes.innerHTML = '<p class="col-span-full text-center text-red-500">Hubo un error al conectar con la base de datos. 🔌</p>';
+        }
     }
 
-    // Carga inicial (Top Animes)
-    solicitarAnimes();
+    // 3. Función para "pintar" las tarjetas de anime
+    function dibujarPantalla(lista) {
+        gridAnimes.innerHTML = ''; // Limpiamos el mensaje de "Cargando"
 
-    // Configurar Buscador
-    let timer;
-    search.addEventListener('input', (e) => {
-        clearTimeout(timer);
-        const query = e.target.value.trim();
-        
-        timer = setTimeout(() => {
-            if (query.length > 2) {
-                solicitarAnimes(`/anime?q=${query}&limit=20`);
-            } else if (query.length === 0) {
-                solicitarAnimes();
-            }
-        }, 600);
-    });
-});
+        if (!lista || lista.length === 0) {
+            gridAnimes.innerHTML = '<p class="col-span-full text-center">No encontramos nada con ese nombre. 🧐</p>';
+            return;
+        }
 
-// 3. FUNCIÓN DE COMUNICACIÓN CON LA API
-async function solicitarAnimes(endpoint = '/top/anime?limit=20') {
-    const grid = document.getElementById(CONFIG.gridId);
-    
-    // Indicador de carga visual
-    grid.innerHTML = '<div class="col-span-full text-center py-20 text-blue-400 animate-pulse">Conectando con la base de datos... 📡</div>';
-
-    try {
-        console.log(`📡 Solicitando: ${CONFIG.apiBase}${endpoint}`);
-        const response = await fetch(`${CONFIG.apiBase}${endpoint}`);
-        
-        if (!response.ok) throw new Error(`Fallo en la red: ${response.status}`);
-
-        const result = await response.json();
-        console.log("📦 Datos recibidos:", result.data.length, "animes");
-
-        dibujarInterfaz(result.data);
-
-    } catch (error) {
-        console.error("❌ Error en la carga:", error);
-        grid.innerHTML = `
-            <div class="col-span-full text-center py-20 text-red-500">
-                <p class="text-2xl mb-2">🔌 Error de Conexión</p>
-                <p class="text-sm opacity-70">${error.message}</p>
-            </div>`;
-    }
-}
-
-// 4. FUNCIÓN PARA PINTAR LAS TARJETAS
-function dibujarInterfaz(animes) {
-    const grid = document.getElementById(CONFIG.gridId);
-    grid.innerHTML = ''; // Limpiar cargador
-
-    if (animes.length === 0) {
-        grid.innerHTML = '<p class="col-span-full text-center text-gray-500">No se encontraron resultados 🕵️‍♂️</p>';
-        return;
-    }
-
-    animes.forEach(anime => {
-        const card = document.createElement('div');
-        card.className = "bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-lg hover:border-blue-500 transition-all duration-300 p-2";
-        
-        card.innerHTML = `
-            <img src="${anime.images.jpg.large_image_url}" class="w-full h-56 object-cover rounded-xl mb-3" alt="${anime.title}">
-            <div class="p-2">
-                <h3 class="font-bold text-sm truncate text-white mb-1">${anime.title}</h3>
-                <div class="flex justify-between items-center mt-2">
-                    <span class="text-[10px] bg-blue-600 px-2 py-0.5 rounded text-white font-black">⭐ ${anime.score || 'N/A'}</span>
-                    <a href="${anime.url}" target="_blank" class="text-[10px] text-blue-400 hover:underline font-bold">VER MÁS</a>
+        lista.forEach(anime => {
+            const tarjeta = `
+                <div class="anime-card bg-[#1c2333] rounded-2xl overflow-hidden border border-gray-800 shadow-lg transition-all duration-300">
+                    <img src="${anime.images.jpg.large_image_url}" class="w-full h-64 object-cover" alt="${anime.title}">
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg mb-2 truncate text-blue-400">${anime.title}</h3>
+                        <p class="text-xs text-gray-400 line-clamp-3 mb-4">${anime.synopsis || 'Sin descripción disponible.'}</p>
+                        <a href="${anime.url}" target="_blank" class="block w-full text-center bg-blue-600 hover:bg-blue-500 py-2 rounded-xl font-bold text-sm transition-colors shadow-lg">
+                            VER FICHA
+                        </a>
+                    </div>
                 </div>
-            </div>
-        `;
-        grid.appendChild(card);
+            `;
+            gridAnimes.innerHTML += tarjeta;
+        });
+    }
+
+    // 4. Lógica del buscador con retraso (Debounce)
+    let temporizador;
+    buscador.addEventListener('input', (e) => {
+        clearTimeout(temporizador);
+        const texto = e.target.value.trim();
+
+        temporizador = setTimeout(() => {
+            if (texto.length > 2) {
+                obtenerDatos(texto);
+            } else if (texto.length === 0) {
+                obtenerDatos(); // Si borra todo, vuelve al Top
+            }
+        }, 500); // Espera 500ms para no saturar la API
     });
-}
+
+    // 5. Carga inicial al abrir la página
+    obtenerDatos();
+</script>
