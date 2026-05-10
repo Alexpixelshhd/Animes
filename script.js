@@ -1,47 +1,74 @@
-const API_URL = 'https://api.jikan.moe/v4/top/anime';
+// Configuración de la API y estado de la aplicación
+const API_BASE = 'https://api.jikan.moe/v4';
+let currentData = []; // Guardaremos los datos aquí para filtrar rápido
 
-async function obtenerAnimes() {
+// 1. Función principal para obtener datos
+async function fetchAnime(endpoint = '/top/anime', query = '') {
+    const container = document.getElementById('anime-container');
+    const url = query ? `${API_BASE}/anime?q=${query}&order_by=score&sort=desc` : `${API_BASE}${endpoint}`;
+    
     try {
-        const respuesta = await fetch(API_URL);
-        const datos = await respuesta.json();
-        
-        if (datos.data) {
-            mostrarAnimes(datos.data);
-        }
+        const response = await fetch(url);
+        const json = await response.json();
+        currentData = json.data || [];
+        renderCards(currentData);
     } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('anime-container').innerHTML = 
-            '<p class="text-red-400">Error al conectar con la base de datos. intenta recargar. 🔄</p>';
+        console.error("Error cargando datos:", error);
+        container.innerHTML = `<p class="text-red-400 col-span-full text-center">Error de conexión. Reintenta en unos momentos. 🔄</p>`;
     }
 }
 
-function mostrarAnimes(listaAnime) {
-    const contenedor = document.getElementById('anime-container');
-    contenedor.innerHTML = ''; // Limpia el cargando...
+// 2. Función para "dibujar" las tarjetas en el HTML
+function renderCards(data) {
+    const container = document.getElementById('anime-container');
+    container.innerHTML = ''; // Limpiar cargando
 
-    listaAnime.slice(0, 12).forEach(anime => {
-        const tarjeta = `
-            <div class="anime-card bg-[#161b2c] rounded-xl overflow-hidden shadow-2xl border border-gray-800 transition-all duration-300">
-                <div class="relative overflow-hidden h-72">
-                    <img src="${anime.images.jpg.large_image_url}" alt="${anime.title}" class="w-full h-full object-cover transition-transform duration-500">
-                    <div class="absolute top-2 right-2 bg-blue-600 text-xs font-bold px-2 py-1 rounded shadow-lg">
+    if (data.length === 0) {
+        container.innerHTML = `<p class="text-gray-500 col-span-full text-center py-10">No encontramos resultados para tu búsqueda. 🔍</p>`;
+        return;
+    }
+
+    data.slice(0, 16).forEach(anime => {
+        const card = `
+            <div class="anime-card bg-[#111625] rounded-2xl overflow-hidden border border-gray-800 transition-all duration-300 shadow-lg group">
+                <div class="relative h-64 overflow-hidden">
+                    <img src="${anime.images.jpg.large_image_url}" alt="${anime.title}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                    <div class="absolute top-3 left-3 bg-blue-600/90 backdrop-blur-md text-white text-xs font-bold px-2 py-1 rounded-lg shadow-xl">
                         ⭐ ${anime.score || 'N/A'}
                     </div>
                 </div>
                 <div class="p-5">
-                    <h3 class="font-bold text-lg mb-2 line-clamp-1 text-white">${anime.title}</h3>
-                    <p class="text-gray-400 text-xs mb-4 line-clamp-3 leading-relaxed">
-                        ${anime.synopsis ? anime.synopsis : 'Sin descripción disponible actualmente.'}
+                    <h3 class="font-bold text-lg mb-2 line-clamp-1 text-white group-hover:text-blue-400 transition-colors">${anime.title}</h3>
+                    <p class="text-gray-400 text-xs mb-5 line-clamp-2 leading-relaxed">
+                        ${anime.synopsis || 'Sin descripción disponible.'}
                     </p>
-                    <a href="${anime.url}" target="_blank" 
-                       class="block text-center bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold py-2.5 rounded-lg transition-all shadow-lg active:scale-95 text-sm uppercase tracking-wider">
-                       Ver Detalles Oficiales
+                    <a href="${anime.url}" target="_blank" class="block w-full text-center bg-gray-800 hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-all text-xs uppercase tracking-widest shadow-inner">
+                        Ver Detalles Legales
                     </a>
                 </div>
             </div>
         `;
-        contenedor.innerHTML += tarjeta;
+        container.innerHTML += card;
     });
 }
 
-obtenerAnimes();
+// 3. Lógica del Buscador (Escucha mientras escribes)
+const searchInput = document.getElementById('search-input');
+let debounceTimer;
+
+searchInput.addEventListener('input', (e) => {
+    clearTimeout(debounceTimer);
+    const query = e.target.value.trim();
+    
+    // Esperamos 500ms para no saturar la API con cada letra
+    debounceTimer = setTimeout(() => {
+        if (query.length > 2) {
+            fetchAnime('/anime', query);
+        } else if (query.length === 0) {
+            fetchAnime(); // Vuelve a tendencias si está vacío
+        }
+    }, 500);
+});
+
+// Inicializar la carga de tendencias
+fetchAnime();
