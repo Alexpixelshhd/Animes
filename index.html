@@ -3,32 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith Anime | Profesional</title>
+    <title>Alexstreaming | Tu Portal de Anime</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #05070a; color: #f8fafc; font-family: sans-serif; }
+        .card:hover { transform: translateY(-5px); border-color: #3b82f6; }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-200 font-sans">
+<body>
 
-    <header class="p-6 border-b border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 class="text-3xl font-black text-blue-500 italic uppercase">Zenith Stream</h1>
-        <input type="text" id="buscador" placeholder="Buscar por nombre o género..." 
-               class="bg-slate-900 border border-slate-700 px-4 py-2 rounded-full w-full max-w-md outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+    <header class="p-5 border-b border-gray-800 flex justify-between items-center sticky top-0 bg-[#05070a] z-50">
+        <h1 class="text-2xl font-black text-blue-500 tracking-widest uppercase">Alexstreaming</h1>
+        <input type="text" id="buscador" placeholder="Busca tu anime..." 
+               class="bg-gray-900 border border-gray-700 px-4 py-2 rounded-full w-64 focus:ring-2 focus:ring-blue-600 outline-none">
     </header>
 
-    <nav id="barra-generos" class="flex flex-wrap justify-center gap-2 p-4 bg-slate-900/50">
-        </nav>
-
-    <section id="zona-reproductor" class="max-w-6xl mx-auto p-4 hidden">
-        <div class="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-blue-900/30">
-            <iframe id="video-iframe" src="" class="w-full h-full" allowfullscreen></iframe>
-        </div>
-        <h2 id="titulo-video" class="text-2xl font-bold mt-4 text-white"></h2>
-    </section>
-
     <main class="max-w-7xl mx-auto p-6">
-        <div id="grid-animes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+        <div id="contenedor-animes" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
             </div>
     </main>
 
-    <script src="app.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
