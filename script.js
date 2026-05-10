@@ -34,8 +34,8 @@ function dibujarTarjetas(listaDeAnimes) {
     listaDeAnimes.forEach(anime => {
         
         // Preparamos el enlace de búsqueda para AnimeFLV 📺
-        const urlStreaming = `https://www3.animeflv.net/browse?q=${encodeURIComponent(anime.title)}`;
-
+        const urlStreaming = `https://www.google.com/search?q=site:animeflv.net+${encodeURIComponent(anime.title)}`;
+        
         // Creamos la estructura de la tarjeta
         const tarjeta = `
             <div class="bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 p-3 shadow-lg hover:border-blue-500 transition-all">
