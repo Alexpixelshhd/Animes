@@ -3,22 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith Stream | Portal ⛩️</title>
+    <title>Zenith Stream Pro 🚀</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0b0e14; color: #f8fafc; }
-        .anime-card:hover img { transform: scale(1.1); }
+        /* Personalización del scrollbar para que se vea moderno */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <header class="max-w-6xl mx-auto mb-8 text-center">
-        <h1 class="text-4xl font-black text-blue-500 mb-4 uppercase italic">Zenith Stream</h1>
-        <input type="text" id="buscador" placeholder="Busca tu anime..." 
-               class="w-full max-w-md bg-slate-900 border border-slate-700 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none">
+<body class="bg-slate-950 text-slate-200 min-h-screen font-sans">
+
+    <header class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 p-6">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <h1 class="text-3xl font-black text-blue-500 italic tracking-tighter uppercase">
+                Zenith <span class="text-white">Stream</span>
+            </h1>
+            <div class="relative w-full md:w-96">
+                <input type="text" id="buscador" placeholder="Buscar series o películas..." 
+                       class="w-full bg-slate-900 border border-slate-700 py-3 px-5 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none transition-all">
+                <span class="absolute right-4 top-3.5 opacity-40">🔍</span>
+            </div>
+        </div>
     </header>
 
-    <main id="catalogo" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 max-w-6xl mx-auto">
-        </main>
+    <main class="max-w-7xl mx-auto p-6">
+        <div id="catalogo" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+            </div>
+    </main>
 
     <script src="script.js"></script>
 </body>
