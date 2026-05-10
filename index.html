@@ -1,19 +1,34 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Mi Primera Página</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith Anime | Profesional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-200 font-sans">
 
-    <h1>¡Hola, Mundo!</h1>
-    <button id="miBoton">Haz clic aquí</button>
+    <header class="p-6 border-b border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+        <h1 class="text-3xl font-black text-blue-500 italic uppercase">Zenith Stream</h1>
+        <input type="text" id="buscador" placeholder="Buscar por nombre o género..." 
+               class="bg-slate-900 border border-slate-700 px-4 py-2 rounded-full w-full max-w-md outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+    </header>
 
-    <script>
-        // Aquí va nuestro "script" (JavaScript)
-        document.getElementById("miBoton").onclick = function() {
-            alert("¡Felicidades! Has ejecutado tu primer script.");
-        };
-    </script>
+    <nav id="barra-generos" class="flex flex-wrap justify-center gap-2 p-4 bg-slate-900/50">
+        </nav>
 
+    <section id="zona-reproductor" class="max-w-6xl mx-auto p-4 hidden">
+        <div class="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-blue-900/30">
+            <iframe id="video-iframe" src="" class="w-full h-full" allowfullscreen></iframe>
+        </div>
+        <h2 id="titulo-video" class="text-2xl font-bold mt-4 text-white"></h2>
+    </section>
+
+    <main class="max-w-7xl mx-auto p-6">
+        <div id="grid-animes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+            </div>
+    </main>
+
+    <script src="app.js"></script>
 </body>
 </html>
