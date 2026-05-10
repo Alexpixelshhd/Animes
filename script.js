@@ -1,61 +1,71 @@
 /**
- * ZENITH ANIME PRO - MOTOR PRINCIPAL ⚙️
+ * ZENITH ANIME PRO - MOTOR DE STREAMING 🚀
  */
 
-// 1. Configuración inicial
 const API_BASE = 'https://api.jikan.moe/v4';
 const contenedor = document.getElementById('grilla-animes');
+const buscador = document.getElementById('input-busqueda');
 
-// 2. Función para conectar con la API
-async function obtenerAnimes() {
+// 1. Función para conectar con la API
+async function obtenerAnimes(nombre = '') {
     try {
-        // Mostramos un mensaje de carga mientras esperamos
-        contenedor.innerHTML = '<p class="col-span-full text-center">Cargando catálogo... 📡</p>';
-
-        // Pedimos los 15 animes más populares
-        const respuesta = await fetch(`${API_BASE}/top/anime?limit=15`);
-        const resultado = await respuesta.json();
+        contenedor.innerHTML = '<p class="col-span-full text-center animate-pulse">Sincronizando señal... 📡</p>';
         
-        // Enviamos los datos a la función que dibuja las tarjetas
-        dibujarTarjetas(resultado.data);
+        // Si hay nombre, busca; si no, trae los populares
+        const url = nombre 
+            ? `${API_BASE}/anime?q=${encodeURIComponent(nombre)}&limit=15`
+            : `${API_BASE}/top/anime?limit=15`;
 
+        const respuesta = await fetch(url);
+        const { data } = await respuesta.json();
+        
+        renderizar(data);
     } catch (error) {
-        console.error("Fallo de conexión:", error);
-        contenedor.innerHTML = '<p class="col-span-full text-center text-red-500">Error al conectar con la base de datos 🔌</p>';
+        contenedor.innerHTML = '<p class="col-span-full text-center text-red-500">Error de conexión 🔌</p>';
     }
 }
 
-// 3. Función para crear las tarjetas en el HTML
-function dibujarTarjetas(listaDeAnimes) {
-    // Limpiamos el contenedor
+// 2. Función para dibujar la interfaz
+function renderizar(animes) {
     contenedor.innerHTML = '';
+    
+    if (!animes || animes.length === 0) {
+        contenedor.innerHTML = '<p class="col-span-full text-center">No se encontró el anime 🕵️‍♂️</p>';
+        return;
+    }
 
-    // Usamos un bucle para recorrer cada anime de la lista
-    listaDeAnimes.forEach(anime => {
-        
-        // Preparamos el enlace de búsqueda para AnimeFLV 📺
+    animes.forEach(anime => {
+        // CONSTRUCCIÓN DEL ENLACE 🔗
+        // Usamos la estructura de búsqueda de Google limitada solo a AnimeFLV para evitar bloqueos
         const urlStreaming = `https://www.google.com/search?q=site:animeflv.net+${encodeURIComponent(anime.title)}`;
+
+        const tarjeta = document.createElement('div');
+        tarjeta.className = "bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 p-3 shadow-lg hover:border-blue-500 transition-all";
         
-        // Creamos la estructura de la tarjeta
-        const tarjeta = `
-            <div class="bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 p-3 shadow-lg hover:border-blue-500 transition-all">
-                <div class="relative h-64 overflow-hidden rounded-xl mb-3">
-                    <img src="${anime.images.jpg.large_image_url}" class="w-full h-full object-cover">
-                </div>
-                <h3 class="font-bold text-sm truncate text-white mb-3">${anime.title}</h3>
-                <div class="flex justify-between items-center">
-                    <span class="text-xs font-black text-blue-400">⭐ ${anime.score || 'N/A'}</span>
-                    <a href="${urlStreaming}" target="_blank" class="text-[10px] bg-blue-600 px-4 py-2 rounded-lg font-black hover:bg-blue-700 transition-all text-white">
-                        VER AHORA 📺
-                    </a>
-                </div>
+        tarjeta.innerHTML = `
+            <div class="relative h-64 overflow-hidden rounded-xl mb-3">
+                <img src="${anime.images.jpg.large_image_url}" class="w-full h-full object-cover">
+            </div>
+            <h3 class="font-bold text-sm truncate text-white mb-3">${anime.title}</h3>
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-black text-blue-400">⭐ ${anime.score || 'N/A'}</span>
+                <a href="${urlStreaming}" target="_blank" class="text-[10px] bg-blue-600 px-4 py-2 rounded-lg font-black hover:bg-blue-700 transition-all text-white">
+                    VER AHORA 📺
+                </a>
             </div>
         `;
-
-        // Inyectamos la tarjeta en el contenedor
-        contenedor.innerHTML += tarjeta;
+        contenedor.appendChild(tarjeta);
     });
 }
 
-// 4. Encendemos el motor
+// 3. Escuchador del buscador (con retraso para no saturar)
+let timer;
+buscador.addEventListener('input', (e) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+        obtenerAnimes(e.target.value);
+    }, 500);
+});
+
+// Inicio inicial
 obtenerAnimes();
