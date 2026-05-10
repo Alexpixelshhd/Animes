@@ -1,63 +1,66 @@
-// 1. Configuración básica
-const API_BASE = 'https://api.jikan.moe/v4';
-const container = document.getElementById('anime-container');
-const searchInput = document.getElementById('search-input');
+<script>
+    // 1. Conexión con los elementos del HTML
+    const gridAnimes = document.getElementById('grid-animes');
+    const buscador = document.getElementById('buscador-principal');
 
-// 2. Función para obtener datos de la API
-async function cargarAnimes(query = '') {
-    // Si hay búsqueda, usamos el endpoint de búsqueda; si no, el de "top"
-    const url = query 
-        ? `${API_BASE}/anime?q=${query}&order_by=score&sort=desc&limit=12` 
-        : `${API_BASE}/top/anime?limit=12`;
+    // 2. Función maestra para obtener datos de la API (Jikan v4)
+    async function obtenerDatos(termino = '') {
+        // Si hay texto busca por nombre, si no, trae el Top de la temporada
+        const url = termino 
+            ? `https://api.jikan.moe/v4/anime?q=${termino}&limit=12` 
+            : `https://api.jikan.moe/v4/top/anime?limit=12`;
 
-    try {
-        container.innerHTML = '<p class="col-span-full text-center">Buscando en la base de datos...</p>';
-        
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        dibujarTarjetas(data.data);
-    } catch (error) {
-        console.error("Error en la petición:", error);
-        container.innerHTML = '<p class="col-span-full text-center text-red-500">Error al conectar. Reintenta.</p>';
-    }
-}
-
-// 3. Función para mostrar los animes en pantalla
-function dibujarTarjetas(animes) {
-    if (!animes || animes.length === 0) {
-        container.innerHTML = '<p class="col-span-full text-center">No se encontraron resultados. 🧐</p>';
-        return;
+        try {
+            const respuesta = await fetch(url);
+            const resultado = await respuesta.json();
+            dibujarPantalla(resultado.data);
+        } catch (error) {
+            console.error("Error de conexión:", error);
+            gridAnimes.innerHTML = '<p class="col-span-full text-center text-red-500">Hubo un error al conectar con la base de datos. 🔌</p>';
+        }
     }
 
-    container.innerHTML = animes.map(anime => `
-        <div class="bg-[#111625] rounded-2xl overflow-hidden border border-gray-800 shadow-lg">
-            <img src="${anime.images.jpg.large_image_url}" class="w-full h-64 object-cover">
-            <div class="p-4">
-                <h3 class="font-bold text-white mb-2">${anime.title}</h3>
-                <p class="text-xs text-gray-400 line-clamp-2 mb-4">${anime.synopsis || 'Sin descripción.'}</p>
-                <a href="${anime.url}" target="_blank" class="block text-center bg-blue-600 py-2 rounded-lg text-sm font-bold">Ver más</a>
-            </div>
-        </div>
-    `).join('');
-}
+    // 3. Función para "pintar" las tarjetas de anime
+    function dibujarPantalla(lista) {
+        gridAnimes.innerHTML = ''; // Limpiamos el mensaje de "Cargando"
 
-// 4. Escuchar el buscador con un pequeño retraso (Debounce)
-let tiempoEspera;
-if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-        clearTimeout(tiempoEspera);
+        if (!lista || lista.length === 0) {
+            gridAnimes.innerHTML = '<p class="col-span-full text-center">No encontramos nada con ese nombre. 🧐</p>';
+            return;
+        }
+
+        lista.forEach(anime => {
+            const tarjeta = `
+                <div class="anime-card bg-[#1c2333] rounded-2xl overflow-hidden border border-gray-800 shadow-lg transition-all duration-300">
+                    <img src="${anime.images.jpg.large_image_url}" class="w-full h-64 object-cover" alt="${anime.title}">
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg mb-2 truncate text-blue-400">${anime.title}</h3>
+                        <p class="text-xs text-gray-400 line-clamp-3 mb-4">${anime.synopsis || 'Sin descripción disponible.'}</p>
+                        <a href="${anime.url}" target="_blank" class="block w-full text-center bg-blue-600 hover:bg-blue-500 py-2 rounded-xl font-bold text-sm transition-colors shadow-lg">
+                            VER FICHA
+                        </a>
+                    </div>
+                </div>
+            `;
+            gridAnimes.innerHTML += tarjeta;
+        });
+    }
+
+    // 4. Lógica del buscador con retraso (Debounce)
+    let temporizador;
+    buscador.addEventListener('input', (e) => {
+        clearTimeout(temporizador);
         const texto = e.target.value.trim();
 
-        tiempoEspera = setTimeout(() => {
+        temporizador = setTimeout(() => {
             if (texto.length > 2) {
-                cargarAnimes(texto);
+                obtenerDatos(texto);
             } else if (texto.length === 0) {
-                cargarAnimes(); // Vuelve al top si borras todo
+                obtenerDatos(); // Si borra todo, vuelve al Top
             }
-        }, 500);
+        }, 500); // Espera 500ms para no saturar la API
     });
-}
 
-// 5. Carga inicial al abrir la página
-cargarAnimes();
+    // 5. Carga inicial al abrir la página
+    obtenerDatos();
+</script>
